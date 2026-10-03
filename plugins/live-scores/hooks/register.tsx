@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Board, Celebration, Filter, Match } from '../types'
-import { LEAGUES, dayLabel, isSameDay, kickoff, leagueOf, logoUrl, parseScoreboard, scoreboardUrls } from './espn'
+import { LEAGUES, dayLabel, isSameDay, kickoff, leagueOf, logoUrl, parseScoreboard, scoreboardPaths } from './espn'
 import { PITCH_ROWS, pitchCells, pitchSvg, toBase64 } from './pitch'
 import type { PitchScene } from './pitch'
 import { C, goalWord, leagueSvg, matchSvg } from './svg'
@@ -109,37 +109,24 @@ async function diff($: EngineInterface, before: Match, after: Match) {
 // is what the engine's fetch sends by default (Claude Code runs on Bun), so
 // every request names the mod instead.
 const USER_AGENT = 'live-scores/0.1 (+https://github.com/thickiran/claude-live-scores)'
-let useCurl = false
+/** One scoreboard feed, from ESPN's public soccer API. */
+async function fetchFeed($: EngineInterface, path: string): Promise<string> {
+  const res = await $.http.fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${path}`, {
+    headers: { 'user-agent': USER_AGENT, accept: 'application/json' },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  if (!res.text.trimStart().startsWith('{')) throw new Error('the feed did not answer with JSON')
 
-/** One feed's body: the engine's fetch, or curl once that has failed for any reason. */
-async function fetchText($: EngineInterface, url: string): Promise<string> {
-  let why = ''
-  if (!useCurl) {
-    try {
-      const res = await $.http.fetch(url, { headers: { 'user-agent': USER_AGENT, accept: 'application/json' } })
-      if (res.ok && res.text.trimStart().startsWith('{')) return res.text
-      why = res.ok ? 'not JSON' : `HTTP ${res.status}`
-    } catch (err) {
-      why = err instanceof Error ? err.message : String(err)
-    }
-    useCurl = true
-  }
-  const out = await $.process.run(['curl', '-sSfL', '--compressed', '--max-time', '10', '-A', USER_AGENT, url], { timeoutMs: 15_000 })
-  if (out.exitCode !== 0) {
-    const curl = `curl exit ${out.exitCode}${out.stderr ? ` (${out.stderr.trim().slice(0, 80)})` : ''}`
-    throw new Error(why ? `${why}, then ${curl}` : curl)
-  }
-
-  return out.stdout
+  return res.text
 }
 
 /** Every league's matches; a feed that fails is counted and skipped, its reason kept. */
 async function fetchAll($: EngineInterface, isFull: boolean): Promise<{ matches: Match[]; failed: number; reason: string }> {
   let failed = 0
   let reason = ''
-  const lists = await Promise.all(LEAGUES.flatMap(l => scoreboardUrls(l.key, isFull).map(async url => {
+  const lists = await Promise.all(LEAGUES.flatMap(l => scoreboardPaths(l.key, isFull).map(async path => {
     try {
-      return parseScoreboard(l.key, await fetchText($, url))
+      return parseScoreboard(l.key, await fetchFeed($, path))
     } catch (err) {
       failed += 1
       reason ||= err instanceof Error ? err.message : String(err)
@@ -202,7 +189,23 @@ async function showStatus($: EngineInterface) {
   }
 }
 
+let isLoadingLogos = false
+
 async function loadLogos($: EngineInterface, ms: Match[]) {
+  // One download at a time: they share one scratch file.
+  if (isLoadingLogos) return
+  isLoadingLogos = true
+  try {
+    await downloadLogos($, ms)
+  } catch {
+    // Crests are decoration: on any failure the team-colour badges stand in.
+  } finally {
+    isLoadingLogos = false
+  }
+}
+
+async function downloadLogos($: EngineInterface, ms: Match[]) {
+  const scratch = `${((await $.env.get('TMPDIR')) || '/tmp').replace(/\/+$/, '')}/live-scores-crest.png`
   const want = [...new Set(ms.flatMap(m => [m.home.logo, m.away.logo]))].filter(l => l && !logos.has(l) && !logoPending.has(l))
   let changed = false
   for (const logo of want) {
@@ -216,10 +219,12 @@ async function loadLogos($: EngineInterface, ms: Match[]) {
         changed = true
         continue
       }
-      // $.http.fetch hands back text, so curl fetches the bytes and base64 carries them.
-      const out = await $.process.run(['sh', '-c', 'curl -sfL --max-time 8 -A "$2" "$1" | base64 | tr -d "\\n"', 'sh', url, USER_AGENT], { timeoutMs: 12_000 })
-      const b64 = out.stdout.trim()
-      if (out.exitCode === 0 && b64.startsWith('iVBOR') && b64.length < 20_000) {
+      // $.http.fetch answers with text, so curl carries the image's bytes
+      // into a scratch file, and $.fs reads them back as base64.
+      const out = await $.process.run(['curl', '-sfL', '--max-time', '8', '-A', USER_AGENT, '-o', scratch, url], { timeoutMs: 12_000 })
+      if (out.exitCode !== 0) continue
+      const { base64: b64 } = await $.fs.read(scratch, { as: 'bytes' })
+      if (b64.startsWith('iVBOR') && b64.length < 20_000) {
         logos.set(logo, b64)
         await $.store.set(`logo:${logo}`, b64)
         changed = true

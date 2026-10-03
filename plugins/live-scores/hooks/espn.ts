@@ -4,7 +4,7 @@ export type League = { key: string; region: string; flag: string; name: string }
 
 // Display order: the big five first, then national-team competitions.
 export const LEAGUES: League[] = [
-  { key: 'eng.1', region: 'England', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', name: 'Premier League' },
+  { key: 'eng.1', region: 'England', flag: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}', name: 'Premier League' },
   { key: 'esp.1', region: 'Spain', flag: '🇪🇸', name: 'LaLiga' },
   { key: 'ita.1', region: 'Italy', flag: '🇮🇹', name: 'Serie A' },
   { key: 'ger.1', region: 'Germany', flag: '🇩🇪', name: 'Bundesliga' },
@@ -24,8 +24,6 @@ export const LEAGUES: League[] = [
 ]
 
 export const leagueOf = (key: string) => LEAGUES.find(l => l.key === key) ?? LEAGUES[0]!
-
-const BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer'
 
 const ymd = (d: Date) =>
   `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
@@ -89,15 +87,17 @@ function parseEvent(league: string, ev: any): Match | undefined {
 }
 
 /**
- * The scoreboard URLs for one league. ESPN takes one date per request (a
- * range is a 400), dated in US time, so the local day needs yesterday's
- * feed too; the undated feed is the league's next matchday, for "next up".
+ * The scoreboard feeds for one league, as paths under ESPN's soccer API
+ * (`https://site.api.espn.com/apis/site/v2/sports/soccer/`). ESPN takes one
+ * date per request (a range is a 400), dated in US time, so the local day
+ * needs yesterday's feed too; the undated feed is the league's next
+ * matchday, for "next up".
  */
-export function scoreboardUrls(league: string, isFull: boolean, now = new Date()): string[] {
+export function scoreboardPaths(league: string, isFull: boolean, now = new Date()): string[] {
   const days = [ymd(now), ymd(new Date(now.getTime() - 86_400_000))]
-  const urls = days.map(d => `${BASE}/${league}/scoreboard?dates=${d}`)
+  const paths = days.map(d => `${league}/scoreboard?dates=${d}`)
 
-  return isFull ? [...urls, `${BASE}/${league}/scoreboard`] : urls
+  return isFull ? [...paths, `${league}/scoreboard`] : paths
 }
 
 export function parseScoreboard(league: string, text: string): Match[] {

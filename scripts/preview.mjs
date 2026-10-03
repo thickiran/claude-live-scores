@@ -32,9 +32,9 @@ const get = async url => {
 }
 
 const byId = new Map()
-await Promise.all(espn.LEAGUES.flatMap(l => espn.scoreboardUrls(l.key, false).map(async url => {
+await Promise.all(espn.LEAGUES.flatMap(l => espn.scoreboardPaths(l.key, false).map(async path => {
   try {
-    for (const m of espn.parseScoreboard(l.key, await (await get(url)).text())) byId.set(m.id, m)
+    for (const m of espn.parseScoreboard(l.key, await (await get(`https://site.api.espn.com/apis/site/v2/sports/soccer/${path}`)).text())) byId.set(m.id, m)
   } catch {}
 })))
 const now = Date.now()

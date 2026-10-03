@@ -9,6 +9,7 @@ const PANE = {
 test('the demo match draws and celebrates on every surface', async ($, on) => {
   const clock = mock.clock(on, { now: Date.now() })
   mock.store(on)
+  mock.env(on, { TMPDIR: '/tmp' })
   on('ui.open', () => ({ value: { isPlaced: true } }) as any)
   on('http.fetch', () => ({ value: { status: 503, ok: false, headers: {}, text: '' } }))
   on('process.run', () => ({ value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }) as any)
@@ -40,6 +41,7 @@ test('the mascot pitch plays the live match above the prompt', async ($, on) => 
   on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'engine', ref: 0 }) as any)
   const clock = mock.clock(on, { now: Date.now() })
   mock.store(on)
+  mock.env(on, { TMPDIR: '/tmp' })
   on('ui.open', () => ({ value: { isPlaced: true } }) as any)
   on('http.fetch', () => ({ value: { status: 503, ok: false, headers: {}, text: '' } }))
   on('process.run', () => ({ value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }) as any)
