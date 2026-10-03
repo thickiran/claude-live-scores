@@ -4,6 +4,10 @@
 
 A free, open-source mod for Claude Code.
 
+[![Claude Live Scores in 15 seconds](docs/promo.gif)](docs/promo.mp4)
+
+<sub>15 seconds, made from the mod's own renderers and the real matches of launch night. [Watch with sound (MP4)](docs/promo.mp4).</sub>
+
 **Quick start:** paste this into Claude Code and let it do the rest:
 
 ```
