@@ -1,0 +1,17 @@
+{
+  "name": "claude-live-scores",
+  "owner": { "name": "thickiran", "url": "https://github.com/thickiran" },
+  "metadata": {
+    "description": "Claude Live Scores: live football scores, goal celebrations and a mascot kickabout inside Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "live-scores",
+      "source": "./plugins/live-scores",
+      "description": "Live football scores for the top 5 leagues and national teams, with goal animations and Claude mascots playing the live match above your prompt.",
+      "version": "0.1.0",
+      "category": "fun",
+      "keywords": ["football", "soccer", "live scores", "premier league", "fun"]
+    }
+  ]
+}

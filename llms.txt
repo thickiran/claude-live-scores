@@ -1,0 +1,12 @@
+# Claude Live Scores
+
+> A Claude Code mod: live football scores for the top 5 European leagues and national-team competitions in a pane, animated goal, red-card and VAR moments, and Claude mascots in the live match's kits playing a kickabout above the prompt. Scores come from ESPN's public scoreboard feed; no account or API key.
+
+Install:
+  claude plugin marketplace add thickiran/claude-live-scores
+  claude plugin install live-scores@claude-live-scores
+Then start a new session. /scores opens the pane, /scores pitch toggles the mascot pitch, /scores demo plays a scripted match.
+
+- [README](https://github.com/thickiran/claude-live-scores/blob/main/README.md): what it does, commands, data source
+- [Plugin README](https://github.com/thickiran/claude-live-scores/blob/main/plugins/live-scores/README.md): every hook, program and host, and what it stores
+- [AGENTS.md](https://github.com/thickiran/claude-live-scores/blob/main/AGENTS.md): repo map, architecture, rules, how to add competitions

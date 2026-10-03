@@ -1,0 +1,11 @@
+{
+  "name": "claude-live-scores",
+  "private": true,
+  "type": "module",
+  "description": "Live football scores, goal celebrations and a mascot kickabout inside Claude Code. A Claude Code mod.",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "test": "claude plugin validate . && claude plugin validate plugins/live-scores && claude plugin test plugins/live-scores",
+    "preview": "node scripts/preview.mjs"
+  }
+}
