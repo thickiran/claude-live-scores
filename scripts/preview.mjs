@@ -43,14 +43,6 @@ const today = [...byId.values()]
   .filter(m => m.state === 'in' || espn.isSameDay(m.start, now))
   .sort((a, b) => rank(a.league) - rank(b.league) || a.start - b.start)
 
-const logos = new Map()
-await Promise.all([...new Set(today.flatMap(m => [m.home.logo, m.away.logo]))].map(async logo => {
-  const url = espn.logoUrl(logo)
-  if (!url) return
-  try {
-    logos.set(logo, Buffer.from(await (await get(url)).arrayBuffer()).toString('base64'))
-  } catch {}
-}))
 
 const img = source => `<img style="display:block;max-width:100%;border:0" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(source)}">`
 const groups = []
@@ -62,7 +54,7 @@ for (const m of today) {
 const pane = groups.map(g => {
   const live = g.matches.filter(m => m.state === 'in').length
   return `<div style="display:flex;flex-direction:column">${img(svg.leagueSvg(espn.leagueOf(g.key), live, width))}${
-    g.matches.map((m, i) => img(svg.matchSvg(m, logos, undefined, { width, isLast: i === g.matches.length - 1 }))).join('')}</div>`
+    g.matches.map((m, i) => img(svg.matchSvg(m, undefined, { width, isLast: i === g.matches.length - 1 }))).join('')}</div>`
 }).join('')
 const featured = today.find(m => m.state === 'in') ?? today[0]
 const pitchHtml = featured ? img(pitch.pitchSvg({ match: featured }, Math.max(width, 640))) : '<p>No match today to put on the pitch.</p>'

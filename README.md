@@ -24,7 +24,7 @@ Or install it yourself in two commands ([below](#install)).
 
 | | |
 | --- | --- |
-| **A scores pane** | Today's matches grouped by competition: the live minute (red, ticking), crests and flags, red cards, half-time and full-time results. `All` and `Live` filters. |
+| **A scores pane** | Today's matches grouped by competition: the live minute (red, ticking), a kit badge in each team's colours, red cards, half-time and full-time results. `All` and `Live` filters. |
 | **Goal celebrations** | The ball arcs into the score, the score pops, confetti bursts, a "GOLAZO!" sweeps across the card and a chip names the scorer. Plus a toast, wherever you are. |
 | **Red cards and VAR** | A red card flips in. When VAR takes a goal back, a shaking "VAR · NO GOAL" says so. |
 | **The mascot pitch** | Above your prompt, two keepers and two outfielders in the live match's kits play on: dribbles, tackles, saves, a shot off the crossbar. When the real match scores, so do they, with the net bulging, the keeper beaten and the crowd going up. |
@@ -69,11 +69,11 @@ Then start a new session. `/scores` opens the pane; while a match is live, the p
 
 From ESPN's public scoreboard feed, the JSON behind ESPN's own scoreboards. No account or API key is needed. It is undocumented, so it can lag the broadcast a little or change without notice.
 
-The mod checks every 30 seconds while a match is live or about to kick off, and every 10 minutes otherwise. Crests and flags are loaded from ESPN's image server when first needed and cached on your machine; none are stored in this repository.
+The mod checks every 30 seconds while a match is live or about to kick off, and every 10 minutes otherwise.
 
 ## Privacy
 
-The mod never sees your work. It hooks no tool calls, prompts, files or model responses; it only requests public scoreboards and crest images, and sends nothing about you. [The plugin's README](plugins/live-scores/README.md) lists every hook, program and host exactly.
+The mod never sees your work. It hooks no tool calls, prompts, files or model responses; it only requests public scoreboards, runs no programs and sends nothing about you. [The plugin's README](plugins/live-scores/README.md) lists every hook, program and host exactly.
 
 ## Developing
 
@@ -98,7 +98,7 @@ Ideas and pull requests welcome: more competitions, new celebrations, set pieces
 
 ## Notes
 
-An unofficial fan project. It is not affiliated with or endorsed by Anthropic, ESPN, or any league, federation or club. Team names, crests and flags belong to their owners and are shown only as data.
+An unofficial fan project. It is not affiliated with or endorsed by Anthropic, ESPN, or any league, federation or club. Team names and colours belong to their owners and are shown only as data.
 
 ## License
 

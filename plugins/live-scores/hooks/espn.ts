@@ -39,7 +39,6 @@ function side(c: any, reds: number): Side {
     abbr: String(t.abbreviation ?? '???'),
     color: /^[0-9a-f]{6}$/i.test(t.color ?? '') ? `#${t.color}` : '#5c6270',
     alt: /^[0-9a-f]{6}$/i.test(t.alternateColor ?? '') ? `#${t.alternateColor}` : '#ffffff',
-    logo: typeof t.logo === 'string' ? t.logo : '',
     score: Number.isFinite(score) ? score : null,
     isWinner: c?.winner === true,
     reds,
@@ -122,9 +121,3 @@ export const kickoff = (t: number) => {
 export const dayLabel = (t: number) =>
   new Date(t).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 
-/** ESPN's resizer: a 40 px crest is ~3 KB, small enough to inline. */
-export function logoUrl(logo: string): string | undefined {
-  const m = /^https:\/\/a\.espncdn\.com(\/i\/teamlogos\/[a-z0-9/_.-]+\.png)$/i.exec(logo)
-
-  return m ? `https://a.espncdn.com/combiner/i?img=${m[1]}&w=40&h=40` : undefined
-}

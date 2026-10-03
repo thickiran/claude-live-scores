@@ -22,7 +22,7 @@ const HEAD_H = 36
 const RADIUS = 8
 export const FONT = '-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Helvetica, Arial, sans-serif'
 // Every row's text is vertically centred on these lines (dominant-baseline
-// central), so crests, names, scores and overlays share one axis.
+// central), so kit badges, names, scores and overlays share one axis.
 const ROW = { home: 21, away: 43 } as const
 const X_CREST = 86
 const X_NAME = 104
@@ -128,13 +128,29 @@ export function leagueSvg(l: League, live: number, w = DEFAULT_WIDTH): string {
 </svg>`
 }
 
-function crest(s: Side, cy: number, logo: string | undefined): string {
-  const fallback = `<circle cx="${X_CREST}" cy="${cy}" r="9" fill="${s.color}"/>
-    <text x="${X_CREST}" y="${cy + 0.5}" ${MID} font-size="7" font-weight="800" fill="#fff" text-anchor="middle">${esc(s.abbr.slice(0, 3))}</text>`
+// A jersey in the team's colours stands for the team: its shirt colour, with
+// a trim in its second colour, or in white or ink when the two are too alike.
+const JERSEY = 'M-3.2,-8 Q0,-5.6 3.2,-8 L8.5,-5.6 L10,-1.2 L6.2,0.2 L6.2,8.5 L-6.2,8.5 L-6.2,0.2 L-10,-1.2 L-8.5,-5.6 Z'
+const rgb = (hex: string) => [1, 3, 5].map(i => Number.parseInt(hex.slice(i, i + 2), 16))
+const luma = (hex: string) => {
+  const [r = 0, g = 0, b = 0] = rgb(hex)
 
-  return logo
-    ? `${fallback}<image href="data:image/png;base64,${logo}" x="${X_CREST - 10}" y="${cy - 10}" width="20" height="20"/>`
-    : fallback
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+}
+const apart = (a: string, b: string) => {
+  const [r1 = 0, g1 = 0, b1 = 0] = rgb(a)
+  const [r2 = 0, g2 = 0, b2 = 0] = rgb(b)
+
+  return Math.hypot(r1 - r2, g1 - g2, b1 - b2) > 90
+}
+
+function kitBadge(s: Side, cy: number): string {
+  const trim = apart(s.color, s.alt) ? s.alt : luma(s.color) > 0.6 ? '#1b1e25' : '#ffffff'
+
+  return `<g transform="translate(${X_CREST} ${cy})">
+    <path d="${JERSEY}" fill="${s.color}" stroke="${trim}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M-3.2,-8 L0,-4.4 L3.2,-8" fill="none" stroke="${trim}" stroke-width="1.4" stroke-linejoin="round"/>
+  </g>`
 }
 
 function statusCell(m: Match): string {
@@ -157,7 +173,7 @@ function statusCell(m: Match): string {
 
 const scoreText = (m: Match, s: Side) => (s.score === null || m.state === 'pre' || m.status === 'Postp.' ? '' : String(s.score))
 
-function teamLine(m: Match, s: Side, cy: number, logo: string | undefined, isLoser: boolean, w: number): string {
+function teamLine(m: Match, s: Side, cy: number, isLoser: boolean, w: number): string {
   const weight = s.isWinner ? 700 : 500
   const right = scoreX(w) - 34 - s.reds * 9
   const name = fit(s.name, 14, weight, right - X_NAME)
@@ -167,7 +183,7 @@ function teamLine(m: Match, s: Side, cy: number, logo: string | undefined, isLos
   const nameColor = isLoser ? C.sub : C.text
   const scoreColor = m.state === 'in' ? C.live : isLoser ? C.sub : C.text
 
-  return `${crest(s, cy, logo)}
+  return `${kitBadge(s, cy)}
   <text x="${X_NAME}" y="${cy + 0.5}" ${MID} font-size="14" font-weight="${weight}" fill="${nameColor}">${esc(name)}</text>${reds}
   <text x="${scoreX(w)}" y="${cy + 0.5}" ${MID} font-size="15" font-weight="700" fill="${scoreColor}" text-anchor="end">${scoreText(m, s)}</text>`
 }
@@ -314,7 +330,7 @@ export type CardOptions = {
   isLast?: boolean
 }
 
-export function matchSvg(m: Match, logos: Map<string, string>, cel?: Celebration, opts: CardOptions = {}): string {
+export function matchSvg(m: Match, cel?: Celebration, opts: CardOptions = {}): string {
   const w = Math.round(opts.width ?? DEFAULT_WIDTH)
   const hs = m.home.score ?? 0
   const as = m.away.score ?? 0
@@ -334,8 +350,8 @@ export function matchSvg(m: Match, logos: Map<string, string>, cel?: Celebration
   ${m.state === 'in' ? `<rect width="3" height="${H}" fill="${C.live}"/>` : ''}
   ${statusCell(m)}
   <rect x="60" y="12" width="1" height="${H - 24}" fill="${C.line}"/>
-  ${teamLine(m, m.home, ROW.home, logos.get(m.home.logo), done && hs < as, w)}
-  ${teamLine(m, m.away, ROW.away, logos.get(m.away.logo), done && as < hs, w)}
+  ${teamLine(m, m.home, ROW.home, done && hs < as, w)}
+  ${teamLine(m, m.away, ROW.away, done && as < hs, w)}
   ${overlay}
   </g>
 </svg>`

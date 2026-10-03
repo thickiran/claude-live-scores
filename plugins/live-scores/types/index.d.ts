@@ -7,7 +7,6 @@ export type Side = {
   color: string
   /** The second kit colour (shorts, or the away shirt on a clash). */
   alt: string
-  logo: string
   score: number | null
   isWinner: boolean
   reds: number
@@ -56,7 +55,6 @@ declare module 'claude-code' {
       celebrations: Celebration[]
       tick: number
       filter: Filter
-      logoRev: number
       /** Whether the mascot pitch shows above the prompt. */
       pitch: boolean
       /** Advances the terminal pitch's frames; the desktop one animates itself. */

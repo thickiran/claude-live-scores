@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Board, Celebration, Filter, Match } from '../types'
-import { LEAGUES, dayLabel, isSameDay, kickoff, leagueOf, logoUrl, parseScoreboard, scoreboardPaths } from './espn'
+import { LEAGUES, dayLabel, isSameDay, kickoff, leagueOf, parseScoreboard, scoreboardPaths } from './espn'
 import { PITCH_ROWS, pitchCells, pitchSvg, toBase64 } from './pitch'
 import type { PitchScene } from './pitch'
 import { C, goalWord, leagueSvg, matchSvg } from './svg'
@@ -19,13 +19,10 @@ const board = atom({ plugin: 'live-scores', key: 'board' } as const, { matches: 
 const celebrations = atom({ plugin: 'live-scores', key: 'celebrations' } as const, [] as Celebration[])
 const tick = atom({ plugin: 'live-scores', key: 'tick' } as const, 0)
 const filter = atom({ plugin: 'live-scores', key: 'filter' } as const, 'all' as Filter)
-const logoRev = atom({ plugin: 'live-scores', key: 'logoRev' } as const, 0)
 const pitch = atom({ plugin: 'live-scores', key: 'pitch' } as const, true)
 const pitchTick = atom({ plugin: 'live-scores', key: 'pitchTick' } as const, 0)
 const pitchTurn = atom({ plugin: 'live-scores', key: 'pitchTurn' } as const, 0)
 
-const logos = new Map<string, string>()
-const logoPending = new Set<string>()
 let known: Map<string, Match> | undefined
 let lastFetch = 0
 let lastFull = 0
@@ -173,7 +170,6 @@ async function fetchAndApply($: EngineInterface, cur: Board, now: number, isForc
   const error = fetched.length === 0 && failed > 0 ? `Could not reach ESPN (${failed} feeds failed: ${reason || 'unknown error'})` : ''
   // Demo matches are taken at write time, so a demo started mid-fetch stays.
   await update($, board, b => ({ matches: [...b.matches.filter(m => m.isDemo), ...matches], fetchedAt: Date.now(), error }))
-  void loadLogos($, shown(matches, Date.now()))
   await showStatus($)
 }
 
@@ -189,60 +185,12 @@ async function showStatus($: EngineInterface) {
   }
 }
 
-let isLoadingLogos = false
-
-async function loadLogos($: EngineInterface, ms: Match[]) {
-  // One download at a time: they share one scratch file.
-  if (isLoadingLogos) return
-  isLoadingLogos = true
-  try {
-    await downloadLogos($, ms)
-  } catch {
-    // Crests are decoration: on any failure the team-colour badges stand in.
-  } finally {
-    isLoadingLogos = false
-  }
-}
-
-async function downloadLogos($: EngineInterface, ms: Match[]) {
-  const scratch = `${((await $.env.get('TMPDIR')) || '/tmp').replace(/\/+$/, '')}/live-scores-crest.png`
-  const want = [...new Set(ms.flatMap(m => [m.home.logo, m.away.logo]))].filter(l => l && !logos.has(l) && !logoPending.has(l))
-  let changed = false
-  for (const logo of want) {
-    const url = logoUrl(logo)
-    if (!url) continue
-    logoPending.add(logo)
-    try {
-      const cached = await $.store.get(`logo:${logo}`)
-      if (typeof cached === 'string' && cached) {
-        logos.set(logo, cached)
-        changed = true
-        continue
-      }
-      // $.http.fetch answers with text, so curl carries the image's bytes
-      // into a scratch file, and $.fs reads them back as base64.
-      const out = await $.process.run(['curl', '-sfL', '--max-time', '8', '-A', USER_AGENT, '-o', scratch, url], { timeoutMs: 12_000 })
-      if (out.exitCode !== 0) continue
-      const { base64: b64 } = await $.fs.read(scratch, { as: 'bytes' })
-      if (b64.startsWith('iVBOR') && b64.length < 20_000) {
-        logos.set(logo, b64)
-        await $.store.set(`logo:${logo}`, b64)
-        changed = true
-      }
-    } catch {
-      // No crest: the team-colour badge stands in.
-    } finally {
-      logoPending.delete(logo)
-    }
-  }
-  if (changed) await update($, logoRev, n => n + 1)
-}
 
 // ---- /scores demo ---------------------------------------------------------
 
 function demoMatch(): Match {
   const team = (id: string, name: string, abbr: string, color: string) => ({
-    id, name, abbr, color, alt: '#ffffff', logo: `https://a.espncdn.com/i/teamlogos/soccer/500/${id}.png`, score: 1, isWinner: false, reds: 0,
+    id, name, abbr, color, alt: '#ffffff', score: 1, isWinner: false, reds: 0,
   })
 
   return {
@@ -256,7 +204,6 @@ function demoMatch(): Match {
 async function runDemo($: EngineInterface) {
   const m0 = demoMatch()
   await update($, board, b => ({ ...b, matches: [m0, ...b.matches.filter(m => !m.isDemo)] }))
-  void loadLogos($, [m0])
   const step = (ms: number, fn: (m: Match) => Match) => $.clock.after(ms, () => void (async () => {
     const b = await read($, board)
     const before = b.matches.find(m => m.isDemo)
@@ -387,7 +334,6 @@ export const register: Register = on => {
     const b = await read($, board)
     const cels = await read($, celebrations)
     const which = await read($, filter)
-    await read($, logoRev)
     const els = $.ui.resolve(e) as Record<string, (props: object) => unknown>
     const Box = els.Box as any
     const Text = els.Text as any
@@ -534,7 +480,7 @@ export const register: Register = on => {
               <Svg source={leagueSvg(l, n, width)} alt={`${l.region} · ${l.name}`} />
               {g.matches.map((m, i) => (
                 <Svg
-                  source={matchSvg(m, logos, celOf(m.id), { width, isLast: i === g.matches.length - 1 })}
+                  source={matchSvg(m, celOf(m.id), { width, isLast: i === g.matches.length - 1 })}
                   alt={`${m.status || kickoff(m.start)} ${scoreLine(m)}`}
                 />
               ))}

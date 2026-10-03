@@ -65,7 +65,8 @@ npm run preview     # writes preview.html with today's real scores; OPEN it and 
 - **Never use `isInteractive` on desktop `Svg`.** The desktop draws an interactive Svg in an iframe with no size (the browser's 300×150 default, so cards shrink into white space), and its sanitizer strips every `href` that isn't `#…`, which removes the crests. A plain Svg is drawn as an `<img>`: it keeps its own size, shrinks to fit, keeps the `data:` crests, and still runs SMIL animations.
 - **Desktop widths come from `bodyColumns`.** A desktop cell is `1ch` of the 12–13 px code font, and the count rounds down, so `drawWidth` errs wide; an `<img>` only ever shrinks to fit.
 - **Send the mod's User-Agent.** Claude Code's fetch sends `Bun/x.y.z` by default, and ESPN's CDN answers that with 403.
-- **`$.http.fetch` returns text only.** Crests come through `curl -o <scratch file>` (by name, fixed options, no shell) and `$.fs.read(…, { as: 'bytes' })`. Scoreboards use `$.http.fetch` with the fixed `https://site.api.espn.com/…` address written at the call, which is what the directory's checks read.
+- **Fetch only through `$.http.fetch`, at the fixed address.** Scoreboards come from `https://site.api.espn.com/…`, written at the call, which is what the plugin directory's checks read. The mod runs no programs and reads no files; keep it that way (team crests were dropped for it: `$.http.fetch` returns text only, so images would need `curl`).
+- **Teams are drawn as kit badges** (`kitBadge` in `svg.ts`): a jersey in the shirt colour with a trim in the second colour.
 - **Keep ids unique per SVG only.** Each desktop card is its own image, so ids like `card` don't collide in the app. A page that inlines several (like the asset scripts) has to suffix them.
 
 ## Adding a competition
