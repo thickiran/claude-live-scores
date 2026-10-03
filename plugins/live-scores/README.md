@@ -19,11 +19,11 @@ Timers: a check every 30 seconds that fetches when due (see below); a 150 ms tic
 
 ## Programs it runs
 
-One program, `curl`, with fixed options, never through a shell:
+One program, `curl`, started by name with fixed options, never through a shell:
 
-| Command | When | Why |
+| Program and arguments | When | Why |
 | --- | --- | --- |
-| `curl -sfL --max-time 8 -A <the user agent below> -o <temp dir>/live-scores-crest.png <crest URL>` | Once per team crest or flag, then never again (cached) | Downloads a 40 px PNG from ESPN's image server. Claude Code's own fetch returns text only, so `curl` carries the image's bytes into one scratch file in the system temp folder, which the mod reads back with Claude Code's file API. Only crest paths under `https://a.espncdn.com/i/teamlogos/` are accepted, and one download runs at a time. |
+| `curl`, with the options *silent*, *fail on HTTP errors*, *follow redirects*, *8-second limit*, the user agent below, *write to* `live-scores-crest.png` in the system temp folder, and the crest's URL | Once per team crest or flag, then never again (cached) | Downloads a 40 px PNG from ESPN's image server. Claude Code's own fetch returns text only, so `curl` carries the image's bytes into one scratch file in the system temp folder, which the mod reads back with Claude Code's file API. Only crest paths under `https://a.espncdn.com/i/teamlogos/` are accepted, and one download runs at a time. |
 
 The scoreboards themselves are fetched with Claude Code's own fetch, not `curl`.
 
